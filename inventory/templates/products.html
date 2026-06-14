@@ -1,0 +1,170 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventory Tracking | StockPulse</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+
+    <nav class="navbar">
+        <a href="{% url 'home' %}" class="logo"><h2><span>TEXORA</span></h2></a>
+        <ul class="nav-links">
+            <li><a href="{% url 'home' %}" class="{% if request.resolver_match.url_name == 'home' %}active{% endif %}">Home</a></li>
+            <li><a href="{% url 'about' %}" class="{% if request.resolver_match.url_name == 'about' %}active{% endif %}">About</a></li>
+            <li><a href="{% url 'products' %}" class="active">Products</a></li>
+            <li><a href="{% url 'addproduct' %}">Add Product</a></li>
+            
+            <li>
+                <button class="theme-toggle-btn" onclick="toggleTheme()">🌓 Theme</button>
+            </li>
+        </ul>
+    </nav>
+
+    {% if messages %}
+    <div class="alert-container">
+        {% for message in messages %}
+        <div class="alert-toast {{ message.tags }}">
+            <p>{{ message }}</p>
+            <span class="close-toast" onclick="this.parentElement.style.display='none';">&times;</span>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <main class="table-container scroll-reveal">
+        <div class="table-header-actions" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
+            <h2>Live Asset Registry</h2>
+            
+            <div class="search-box-container" style="position: relative; max-width: 350px; width: 100%;">
+                <input type="text" id="tableSearch" placeholder="🔍 Search by SKU, Description, or Category..." 
+                       style="width: 100%; padding: 0.75rem 1rem; border-radius: 6px; border: 1px solid var(--border-color); background: rgba(255,255,255,0.05); color: var(--text-main); outline: none;">
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table id="inventoryTable">
+                <thead>
+                    <tr>
+                        <th>Visual Preview</th>
+                        <th>SKU Code</th>
+                        <th>Item Description</th>
+                        <th>Classification</th>
+                        <th>Price</th>
+                        <th>Available Stock</th>
+                        <th>Status Metrics</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for product in products %}
+                    <tr class="product-row">
+                        <td>
+                            {% if product.image %}
+                                <img src="{{ product.image }}" alt="{{ product.name }}" class="product-thumbnail">
+                            {% else %}
+                                <span style="color: var(--text-muted); font-size: 0.85rem;">No Image</span>
+                            {% endif %}
+                        </td>
+                        
+                        <td class="search-sku">#{{ product.sku }}</td>
+                        <td class="search-name">{{ product.name }}</td>
+                        <td class="search-category">{{ product.category }}</td>
+                        <td style="font-weight: 600;">₹{{ product.price }}</td>
+                        <td>{{ product.quantity }} Units</td>
+                        <td>
+                            {% if product.quantity == 0 %}
+                                <span style="color: #ef4444; font-weight: 600;">🔴 Out of Stock</span>
+                            {% elif product.quantity < 10 %}
+                                <span style="color: #f59e0b; font-weight: 600;">⚠️ Low Stock</span>
+                            {% else %}
+                                <span style="color: #10b981; font-weight: 600;">🟢 Optimal</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{% url 'deleteproduct' product.sku %}" 
+                               class="btn-delete" 
+                               onclick="return confirm('Are you sure you want to permanently remove this asset from the registry?');"
+                               style="color: #ef4444; text-decoration: none; font-weight: 600; padding: 0.4rem 0.8rem; border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 4px; background: rgba(239, 68, 68, 0.05); transition: background 0.2s; display: inline-block;">
+                                  Delete
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 3rem 0;">
+                            No assets registered in the system inventory records yet.
+                        </td>
+                    </tr>
+                    {% endfor %}
+
+                    <tr id="noResultsRow" style="display: none;">
+                        <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 3rem 0;">
+                            No items match your search parameters.
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2026 StockPulse Systems Inc. All rights reserved.</p>
+    </footer>
+
+    <script>
+        document.documentElement.setAttribute('data-theme', localStorage.getItem('theme') || 'dark');
+
+        // --- SCROLL REVEAL UTILITY ENGINE ---
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach((entry) => {
+                if (entry.isIntersecting) entry.target.classList.add('active');
+            });
+        }, { threshold: 0.1 });
+        document.querySelectorAll('.scroll-reveal').forEach((el) => observer.observe(el));
+
+        // --- REAL-TIME LIVE TEXT FILTER SYSTEM ---
+        const searchInput = document.getElementById('tableSearch');
+        const productRows = document.querySelectorAll('.product-row');
+        const noResultsRow = document.getElementById('noResultsRow');
+
+        searchInput.addEventListener('input', function() {
+            const filterValue = searchInput.value.toLowerCase().trim();
+            let matchesFound = 0;
+
+            productRows.forEach(row => {
+                const skuEl = row.querySelector('.search-sku');
+                const nameEl = row.querySelector('.search-name');
+                const catEl = row.querySelector('.search-category');
+
+                const skuText = skuEl ? skuEl.textContent.toLowerCase() : '';
+                const nameText = nameEl ? nameEl.textContent.toLowerCase() : '';
+                const catText = catEl ? catEl.textContent.toLowerCase() : '';
+
+                if (skuText.includes(filterValue) || nameText.includes(filterValue) || catText.includes(filterValue)) {
+                    row.style.display = ""; 
+                    matchesFound++;
+                } else {
+                    row.style.display = "none"; 
+                }
+            });
+
+            if (matchesFound === 0 && filterValue !== "") {
+                noResultsRow.style.display = "";
+            } else {
+                noResultsRow.style.display = "none";
+            }
+        });
+
+        // --- THEME SYSTEM CONTROLLER CONTROLLER ---
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+        }
+    </script>
+</body>
+</html>

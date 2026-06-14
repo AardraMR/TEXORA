@@ -1,0 +1,102 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Asset Entry | StockPulse</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+
+    <nav class="navbar">
+        <a href="{% url 'home' %}" class="logo"><h2><span>TEXORA</span></h2></a>
+        <ul class="nav-links">
+        <li><a href="{% url 'home' %}" class="{% if request.resolver_match.url_name == 'home' %}active{% endif %}">Home</a></li>
+        <li><a href="{% url 'about' %}" class="{% if request.resolver_match.url_name == 'about' %}active{% endif %}">About</a></li>
+        <li><a href="{% url 'products' %}">Products</a></li>
+        <li><a href="{% url 'addproduct' %}">Add Product</a></li>
+        
+        <li>
+        <button class="theme-toggle-btn" onclick="toggleTheme()">🌓 Theme</button>
+        </li>
+        </ul>
+    </nav>
+
+    {% if messages %}
+    <div class="alert-container">
+        {% for message in messages %}
+        <div class="alert-toast {{ message.tags }}">
+            <p>{{ message }}</p>
+            <span class="close-toast" onclick="this.parentElement.style.display='none';">&times;</span>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <main class="form-container scroll-reveal">
+        <h2>Boutique Asset Onboarding</h2>
+        <p>Register new garments and luxury products into the main inventory ledger rows.</p>
+        
+        <form method="POST">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label for="sku">SKU Code</label>
+                <input type="text" id="sku" name="sku" class="form-control" placeholder="e.g., TX-SLK-RED-BAN" required>
+            </div>
+
+            <div class="form-group">
+                <label for="name">Garment Description / Model</label>
+                <input type="text" id="name" name="name" class="form-control" placeholder="e.g., Premium Red Banarasi Silk Saree" required>
+            </div>
+
+            <div class="form-group">
+                <label for="category">Main Department (Category)</label>
+                <input type="text" id="category" name="category" class="form-control" placeholder="e.g., Women Wear, Kids Wear" required>
+            </div>
+
+            <div class="form-group">
+                <label for="subcategory">Section Style (Subcategory)</label>
+                <input type="text" id="subcategory" name="subcategory" class="form-control" placeholder="e.g., Saree, Frock, Western" required>
+            </div>
+
+            <div class="form-group">
+                <label for="price">Unit Price (₹)</label>
+                <input type="number" step="0.01" id="price" name="price" class="form-control" placeholder="0.00" required>
+            </div>
+
+            <div class="form-group">
+                <label for="quantity">Initial Stock Allocation</label>
+                <input type="number" id="quantity" name="quantity" class="form-control" placeholder="0" required>
+            </div>
+
+            <div class="form-group">
+                <label for="image_url">Showcase Image Local Path</label>
+                <input type="text" id="image_url" name="image_url" class="form-control" 
+                       placeholder="e.g., /static/images/red banarasi saree.jpg" required>
+                <small style="color: var(--text-muted); display: block; margin-top: 0.35rem; font-size: 0.8rem;">
+                    Type the path to your folder file: <code>/static/images/your_filename.jpg</code>
+                </small>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1.5rem;">Commit Entry</button>
+        </form>
+    </main>
+
+    <footer>
+        <p>&copy; 2026 StockPulse Systems Inc. All rights reserved.</p>
+    </footer>
+
+    <script>
+        document.documentElement.setAttribute('data-theme', localStorage.getItem('theme') || 'dark');
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach((entry) => {
+                if (entry.isIntersecting) entry.target.classList.add('active');
+            });
+        }, { threshold: 0.1 });
+        document.querySelectorAll('.scroll-reveal').forEach((el) => observer.observe(el));
+    </script>
+</body>
+</html>
